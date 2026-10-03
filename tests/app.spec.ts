@@ -1,0 +1,37 @@
+import { test, expect } from '@playwright/test'
+
+test('live connection, navigation, and preparedness checklist', async ({ page, context }) => {
+  const errors: string[] = []
+  page.on('pageerror', error => errors.push(error.message))
+  await page.goto('/')
+  await expect(page.getByRole('status')).toContainText('Connected')
+  await expect(page.getByRole('status')).toContainText('ms')
+  await page.getByRole('checkbox', { name: 'Drinking water' }).check()
+  await expect(page.getByRole('heading', { name: '1 of 5 packed' })).toBeVisible()
+  await page.getByRole('link', { name: 'Preparedness', exact: true }).click()
+  await expect(page.getByRole('checkbox', { name: 'Drinking water' })).toBeChecked()
+  const downloadEvent = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Download checklist' }).click()
+  expect((await downloadEvent).suggestedFilename()).toBe('hillalert-packing-list.txt')
+  await page.getByRole('link', { name: 'Nearby devices', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Not implemented yet' })).toBeVisible()
+  await page.getByRole('link', { name: 'Overview', exact: true }).click()
+  await context.setOffline(true)
+  await expect(page.getByRole('status')).toContainText('Reconnecting', { timeout: 45000 })
+  await context.setOffline(false)
+  await expect(page.getByRole('status')).toContainText('Connected', { timeout: 15000 })
+  expect(errors).toEqual([])
+  await page.screenshot({ path: 'test-results/desktop.png', fullPage: true })
+})
+
+test('mobile layout fits the screen and navigation works', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/')
+  await expect(page.getByRole('status')).toContainText('Connected')
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+  await page.screenshot({ path: 'test-results/mobile.png', fullPage: true })
+  await page.getByRole('link', { name: 'Live alerts', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'No alert source configured' })).toBeVisible()
+  await page.getByRole('link', { name: 'Emergency map', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'A clearer view is on the way' })).toBeVisible()
+})

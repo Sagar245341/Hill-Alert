@@ -1,0 +1,19 @@
+{
+  "name": "hill-alert",
+  "private": true,
+  "version": "1.0.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "setup": "npm ci && npm ci --prefix backend && npm ci --prefix frontend",
+    "dev": "node scripts/dev.mjs",
+    "build": "npm run build --prefix backend && npm run build --prefix frontend",
+    "test": "npm test --prefix backend",
+    "test:e2e": "playwright test",
+    "check": "npm run build && npm run lint --prefix frontend && npm test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0"
+  }
+}
